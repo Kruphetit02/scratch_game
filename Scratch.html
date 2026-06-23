@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมเรียนรู้ Scratch 3.x สำหรับชั้น ป.5</title>
+    <style>
+        :root {
+            --scratch-purple: #855CD6;
+            --scratch-blue: #4C97FF;
+            --scratch-orange: #FFAB19;
+            --scratch-menu: #4D97FF;
+            --scratch-bg: #F0F0F0;
+            --scratch-border: #D0D0D0;
+            --dark-gray: #333;
+            --success-green: #2ecc71;
+            --error-red: #e74c3c;
+        }
+
+        * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; }
+
+        body { background-color: #ebf8ff; color: var(--dark-gray); padding: 15px; }
+
+        header {
+            text-align: center;
+            background: linear-gradient(135deg, var(--scratch-purple), var(--scratch-blue));
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+        }
+
+        h1 { font-size: 22px; margin-bottom: 3px; }
+        p.subtitle { font-size: 13px; opacity: 0.8; }
+
+        /* ระบบสลับหน้าเกม */
+        .nav-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        .tab-btn {
+            background-color: white;
+            border: 2px solid var(--scratch-purple);
+            color: var(--scratch-purple);
+            padding: 8px 18px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active, .tab-btn:hover {
+            background-color: var(--scratch-purple);
+            color: white;
+            box-shadow: 0 3px 8px rgba(133, 92, 214, 0.3);
+        }
+
+        .game-panel { display: none; background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
+        .game-panel.active { display: block; }
+
+        .score-board {
+            font-size: 16px; font-weight: bold; margin-bottom: 10px;
+            background-color: #E2E8F0; padding: 8px 15px; border-radius: 8px; display: inline-block;
+        }
+
+        .instruction {
+            margin-bottom: 15px; background-color: #FFF3CD; padding: 10px;
+            border-left: 5px solid var(--scratch-orange); border-radius: 4px; font-size: 14px; font-weight: bold;
+        }
+
+        /* --- สไตล์ด่านที่ 1 --- */
+        .scratch-ui-mockup {
+            display: grid;
+            width: 100%;
+            max-width: 950px;
+            margin: 0 auto;
+            gap: 5px;
+            background-color: var(--scratch-border);
+            padding: 5px;
+            border-radius: 8px;
+            
+            grid-template-areas:
+                "menu menu menu"
+                "palette tabs ctrl_stage"
+                "palette code stage"
+                "palette code stage"
+                "extend spriteinfo spriteinfo"
+                "extend spritelist stagelist";
+            
+            grid-template-columns: 180px 1fr 300px;
+            grid-template-rows: 40px 35px 160px 60px 65px 85px;
+        }
+
+        .ui-zone {
+            background-color: #ffffff;
+            border: 2px dashed #AAA;
+            border-radius: 4px;
+            display: flex; height: 100%; width: 100%;
+            align-items: center; justify-content: center;
+            text-align: center; font-size: 12px; font-weight: bold;
+            padding: 5px; cursor: pointer; transition: all 0.2s;
+            user-select: none;
+        }
+
+        .ui-zone:hover { background-color: #F8F9FA; border-color: var(--scratch-blue); }
+        .ui-zone.matched {
+            background-color: #E6FFFA !important;
+            border: 2px solid var(--success-green) !important;
+            color: #234E52; font-size: 12px;
+        }
+
+        .z1 { grid-area: menu; background-color: var(--scratch-menu); color: white; border-style: solid; }
+        .z5 { grid-area: palette; background-color: #E9F1FC; } 
+        .z10 { grid-area: extend; background-color: #E9F1FC; } 
+        .z4 { grid-area: tabs; background-color: #F5F5F5; } 
+        .z6 { grid-area: code; background-color: #FAFAFA; } 
+        .z7 { grid-area: ctrl_stage; background-color: #FFFFFF; font-size: 10px; } 
+        .z2 { grid-area: stage; background-color: #FFFFFF; } 
+        .z3 { grid-area: spriteinfo; background-color: #FFFFFF; } 
+        .z9 { grid-area: spritelist; background-color: #FFFFFF; } 
+        .z8 { grid-area: stagelist; background-color: #FFFFFF; } 
+
+        .labels-container {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            max-width: 950px; margin: 15px auto 0 auto;
+            background: #EDF2F7; padding: 12px; border-radius: 8px;
+        }
+
+        .word-label {
+            background-color: white; border: 2px solid #CBD5E0;
+            padding: 8px 14px; border-radius: 6px;
+            cursor: pointer; font-size: 13px; font-weight: bold;
+            transition: all 0.2s; user-select: none;
+        }
+
+        .word-label:hover { border-color: var(--scratch-purple); transform: translateY(-1px); }
+        .word-label.selected {
+            background-color: var(--scratch-purple); color: white;
+            border-color: #6B46C1; box-shadow: 0 3px 6px rgba(107, 70, 193, 0.3);
+        }
+        .word-label.used {
+            opacity: 0.3; background-color: #E2E8F0;
+            cursor: not-allowed; pointer-events: none;
+        }
+
+        /* --- สไตล์ด่านที่ 2: ปรับปรุงระบบเป้าเล็งและกริดตาราง --- */
+        .grid-container { display: flex; flex-direction: column; align-items: center; margin-top: 10px; }
+        
+        .target-box {
+            font-size: 22px; font-weight: bold; color: #2C5282;
+            background-color: #EBF8FF; padding: 12px 30px;
+            border-radius: 8px; border: 2px solid #BEE3F8; margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .scratch-stage-grid {
+            position: relative; width: 480px; height: 360px;
+            background-color: white; border: 3px solid #333; border-radius: 4px; cursor: crosshair;
+            /* เส้นกริดตารางชัดเจนช่องละ 60 พิกเซล */
+            background-image: linear-gradient(to right, #CBD5E0 1px, transparent 1px), linear-gradient(to bottom, #CBD5E0 1px, transparent 1px);
+            background-size: 60px 60px; background-position: center;
+        }
+        
+        .axis-x { position: absolute; top: 179px; left: 0; width: 100%; height: 2px; background-color: #E53E3E; pointer-events: none; }
+        .axis-y { position: absolute; left: 239px; top: 0; width: 2px; height: 100%; background-color: #3182CE; pointer-events: none; }
+        .axis-label { position: absolute; font-size: 11px; font-weight: bold; color: #4A5568; pointer-events: none; background: rgba(255,255,255,0.8); padding: 1px 3px; border-radius: 3px; }
+        
+        /* เป้าเล็งอัจฉริยะ (Hover Guide) ล็อกติดเส้นตาราง */
+        .hover-tracker {
+            position: absolute; width: 14px; height: 14px;
+            background-color: rgba(66, 153, 225, 0.6); /* สีฟ้าโปร่งแสง */
+            border: 2px solid #2B6CB0; border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none;
+            display: none; box-shadow: 0 0 8px #4299E1;
+            z-index: 10;
+        }
+
+        .coord-monitor {
+            margin-top: 12px; font-size: 18px; font-weight: bold;
+            background-color: #2D3748; color: #00E676; padding: 8px 25px; border-radius: 20px; text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); min-width: 220px;
+        }
+        
+        .cat-marker {
+            position: absolute; width: 16px; height: 16px; background-color: var(--scratch-orange);
+            border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); animation: flash 0.5s ease-out;
+            z-index: 5;
+        }
+        @keyframes flash { from { opacity: 1; transform: translate(-50%, -50%) scale(0.5); } to { opacity: 0; transform: translate(-50%, -50%) scale(3); } }
+        
+        .btn-reset {
+            margin-top: 15px; background-color: #718096; color: white;
+            border: none; padding: 8px 18px; border-radius: 4px; cursor: pointer; font-weight: bold;
+        }
+        .btn-reset:hover { background-color: #4A5568; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🐱 เกมสนุกคิด เรียนรู้ Scratch 3.x 💻</h1>
+        <p class="subtitle">สื่ออิเล็กทรอนิกส์ประกอบกิจกรรมการเรียนรู้เทคโนโลยี (วิทยาการคำนวณ) ชั้น ป.5</p>
+        <p class="subtitle">พัฒนาโดย ครูกิตติธัช ศรีคำไทย โรงเรียนวิชูทิศ สำนักงานเขตดินแดง</p>
+    </header>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchGame('game1')">ด่าน 1: รู้จักหน้าต่าง Scratch 3.x</button>
+        <button class="tab-btn" onclick="switchGame('game2')">ด่าน 2: พิกัดลับของเจ้าเหมียว</button>
+    </div>
+
+    <div id="game1" class="game-panel active">
+        <div class="score-board">คะแนนด่าน 1: <span id="score1">1</span> / 10</div>
+        <div class="instruction">💡 วิธีเล่น: 1. คลิกเลือกคำศัพท์จากกล่องด้านล่าง ➡️ 2. นำไปคลิกที่กล่อง "หมายเลข" บนหน้าจอจำลองให้ตรงคู่กันให้ถูกต้อง!</div>
+        
+        <div class="scratch-ui-mockup">
+            <div class="ui-zone z1 matched" data-id="1">1. แถบเมนู (Menu Bar)</div>
+            <div class="ui-zone z5" data-id="5">หมายเลข 5</div>
+            <div class="ui-zone z10" data-id="10">หมายเลข 10</div>
+            <div class="ui-zone z4" data-id="4">หมายเลข 4</div>
+            <div class="ui-zone z6" data-id="6">หมายเลข 6</div>
+            <div class="ui-zone z7" data-id="7">หมายเลข 7</div>
+            <div class="ui-zone z2" data-id="2">หมายเลข 2</div>
+            <div class="ui-zone z3" data-id="3">หมายเลข 3</div>
+            <div class="ui-zone z9" data-id="9">หมายเลข 9</div>
+            <div class="ui-zone z8" data-id="8">หมายเลข 8</div>
+        </div>
+
+        <div class="labels-container" id="labelsContainer"></div>
+        <center><button class="btn-reset" onclick="resetGame1()">เริ่มด่าน 1 ใหม่</button></center>
+    </div>
+
+    <div id="game2" class="game-panel">
+        <div class="score-board">คะแนนด่าน 2: <span id="score2">0</span> / 5</div>
+        <div class="instruction">💡 วิธีเล่น: อ่านพิกัดเป้าหมายสีฟ้า ➡️ เลื่อนเป้าเล็งวงกลมไปบนตาราง (ตัวเลขจะล็อกตรงเส้นตารางพอดี) ➡️ เมื่อตรงจุดเป้าหมายแล้วให้คลิกทันที!</div>
+        
+        <div class="grid-container">
+            <div class="target-box" id="targetDisplay">โจทย์พิกัดเป้าหมาย...</div>
+            
+            <div class="scratch-stage-grid" id="stageGrid">
+                <div class="axis-x"></div><div class="axis-y"></div>
+                <div class="axis-label" style="top:185px; right:5px;">X: 240</div>
+                <div class="axis-label" style="top:185px; left:5px;">X: -240</div>
+                <div class="axis-label" style="top:5px; left:245px;">Y: 180</div>
+                <div class="axis-label" style="bottom:5px; left:245px;">Y: -180</div>
+                <div class="axis-label" style="top:185px; left:245px; color:red;">(0,0)</div>
+                
+                <div class="hover-tracker" id="hoverTracker"></div>
+                <div id="markerLayer"></div>
+            </div>
+            
+            <div class="coord-monitor">พิกัดเป้าเล็งปัจจุบัน ➡️ <span id="coordText">X: 0, Y: 0</span></div>
+        </div>
+        <center><button class="btn-reset" onclick="resetGame2()">เริ่มด่าน 2 ใหม่</button></center>
+    </div>
+
+    <script>
+        // ระบบเสียงสังเคราะห์ผ่าน Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                if (type === 'success') { 
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08); osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.16); gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'error') { 
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(120, audioCtx.currentTime); gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+                } else if (type === 'click') { 
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04); osc.start(); osc.stop(audioCtx.currentTime + 0.04); 
+                }
+            } catch(e) {}
+        }
+
+        function switchGame(gameId) {
+            playSound('click');
+            document.querySelectorAll('.game-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(gameId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ================= สคริปต์ด่านที่ 1 =================
+        const uiData = [
+            { id: 1, name: "แถบเมนู (Menu Bar)" },
+            { id: 2, name: "เวที (Stage)" },
+            { id: 3, name: "ข้อมูลของตัวละคร (Sprite Info)" },
+            { id: 4, name: "แท็บเลือก สคริปต์ คอสตูม และเสียง" },
+            { id: 5, name: "กลุ่มบล็อกคำสั่ง (Code Palette)" },
+            { id: 6, name: "พื้นที่ทำงาน (Code Area)" },
+            { id: 7, name: "ปุ่มควบคุมการทำงาน (Go/Stop)" },
+            { id: 8, name: "ข้อมูลเวทีและฉากหลัง (Stage Info)" },
+            { id: 9, name: "รายการตัวละคร (Sprite List)" },
+            { id: 10, name: "ปุ่มเพิ่มส่วนขยาย (Extension)" }
+        ];
+
+        let selectedLabelId = null;
+        let score1 = 1; 
+
+        function initGame1() {
+            const container = document.getElementById('labelsContainer');
+            container.innerHTML = '';
+            const itemsToShuffle = uiData.filter(item => item.id !== 1);
+            const shuffled = [...itemsToShuffle].sort(() => Math.random() - 0.5);
+            
+            shuffled.forEach(item => {
+                const btn = document.createElement('div');
+                btn.className = 'word-label'; btn.innerText = item.name; btn.dataset.id = item.id;
+                btn.onclick = () => selectLabel(btn); container.appendChild(btn);
+            });
+
+            document.querySelectorAll('.ui-zone').forEach(zone => {
+                const id = parseInt(zone.dataset.id);
+                if(id !== 1) {
+                    zone.innerText = `หมายเลข ${id}`; zone.classList.remove('matched');
+                    zone.style.backgroundColor = 'white'; zone.style.borderColor = '#AAA';
+                    zone.onclick = () => matchZone(zone);
+                }
+            });
+            score1 = 1; document.getElementById('score1').innerText = score1; selectedLabelId = null;
+        }
+
+        function selectLabel(element) {
+            playSound('click');
+            document.querySelectorAll('.word-label').forEach(el => el.classList.remove('selected'));
+            if (selectedLabelId === element.dataset.id) { selectedLabelId = null; } 
+            else { selectedLabelId = element.dataset.id; element.classList.add('selected'); }
+        }
+
+        function matchZone(zone) {
+            if (!selectedLabelId) { playSound('error'); alert("📌 กรุณาคลิกเลือกคำศัพท์ในกล่องสีขาวด้านล่างก่อนนะครับ!"); return; }
+            const zoneId = zone.dataset.id;
+            if (selectedLabelId === zoneId) {
+                playSound('success');
+                const matchedItem = uiData.find(item => item.id == zoneId);
+                zone.innerText = matchedItem.name; zone.classList.add('matched'); zone.onclick = null; 
+                const labelBtn = document.querySelector(`.word-label[data-id="${selectedLabelId}"]`);
+                if(labelBtn) labelBtn.classList.add('used');
+                score1++; document.getElementById('score1').innerText = score1; selectedLabelId = null;
+                if(score1 === 10) { alert("🎉 เก่งมากครับเด็กๆ! หนูจับคู่ส่วนประกอบโปรแกรม Scratch 3.x ได้ถูกต้องครบทุกส่วนแล้วครับ"); }
+            } else {
+                playSound('error'); zone.style.backgroundColor = '#FED7D7'; zone.style.borderColor = '#e74c3c';
+                setTimeout(() => { if(!zone.classList.contains('matched')) { zone.style.backgroundColor = 'white'; zone.style.borderColor = '#AAA'; } }, 400);
+            }
+        }
+
+        function resetGame1() { initGame1(); }
+
+        // ================= สคริปต์ด่านที่ 2 (แก้ไขระบบล็อกพิกัดตารางสมบูรณ์แบบ) =================
+        let score2 = 0; let targetX = 0; let targetY = 0;
+        const validCoordsX = [-240, -180, -120, -60, 0, 60, 120, 180, 240];
+        const validCoordsY = [-180, -120, -60, 0, 60, 120, 180];
+        
+        const stageGrid = document.getElementById('stageGrid');
+        const coordText = document.getElementById('coordText');
+        const targetDisplay = document.getElementById('targetDisplay');
+        const hoverTracker = document.getElementById('hoverTracker');
+
+        // จัดการเมาส์เคลื่อนที่ให้ล็อกติดตารางช่องละ 60px ทันที 100%
+        stageGrid.addEventListener('mousemove', function(e) {
+            const rect = stageGrid.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left; 
+            const mouseY = e.clientY - rect.top;
+            
+            // คำนวณหาตำแหน่งพิกัดคณิตศาสตร์แบบ Scratch จริง
+            let rawX = mouseX - 240;
+            let rawY = 180 - mouseY;
+            
+            // ล็อก (Snap) เข้าหาเลขตารางที่ใกล้ที่สุดช่องละ 60 พิกเซลอย่างเข้มงวด
+            let scratchX = Math.round(rawX / 60) * 60;
+            let scratchY = Math.round(rawY / 60) * 60;
+            
+            // ควบคุมไม่ให้ค่าหลุดขอบเวที
+            if (scratchX > 240) scratchX = 240; if (scratchX < -240) scratchX = -240;
+            if (scratchY > 180) scratchY = 180; if (scratchY < -180) scratchY = -180;
+            
+            // อัปเดตข้อความแสดงพิกัดที่ล็อกแล้ว
+            coordText.innerText = `X: ${scratchX}, Y: ${scratchY}`;
+            coordText.dataset.currentX = scratchX;
+            coordText.dataset.currentY = scratchY;
+            
+            // ขยับเป้าเล็งสีฟ้าให้ไปล็อกอยู่บนจุดตัดตารางอย่างแม่นยำ
+            hoverTracker.style.display = 'block';
+            hoverTracker.style.left = (scratchX + 240) + 'px';
+            hoverTracker.style.top = (180 - scratchY) + 'px';
+        });
+
+        // เมื่อเมาส์ออกจากพื้นที่เวที ให้ซ่อนเป้าเล็ง
+        stageGrid.addEventListener('mouseleave', function() {
+            hoverTracker.style.display = 'none';
+        });
+
+        function generateNewTarget() {
+            targetX = validCoordsX[Math.floor(Math.random() * validCoordsX.length)]; 
+            targetY = validCoordsY[Math.floor(Math.random() * validCoordsY.length)];
+            targetDisplay.innerText = `🎯 ภารกิจ: จงคลิกที่พิกัด ➡️ X: ${targetX}, Y: ${targetY}`;
+        }
+
+        // ตรวจสอบการคลิกแบบจับคู่พิกัดตรงตัว 100% (ไม่มีคลาดเคลื่อน)
+        stageGrid.addEventListener('click', function(e) {
+            const currentX = parseInt(coordText.dataset.currentX);
+            const currentY = parseInt(coordText.dataset.currentY);
+            
+            if (currentX === targetX && currentY === targetY) { 
+                playSound('success');
+                score2++;
+                document.getElementById('score2').innerText = score2;
+                
+                // แสดงจุดเอฟเฟกต์สีส้มตรงจุดที่ถูกต้อง
+                const pixelX = targetX + 240;
+                const pixelY = 180 - targetY;
+                const marker = document.createElement('div');
+                marker.className = 'cat-marker';
+                marker.style.left = pixelX + 'px';
+                marker.style.top = pixelY + 'px';
+                document.getElementById('markerLayer').appendChild(marker);
+                setTimeout(() => marker.remove(), 500);
+                
+                if (score2 >= 5) {
+                    alert("🏆 ยอดเยี่ยมที่สุด! หนูผ่านด่านพิกัดลับครบ 5 ข้อแล้วครับ");
+                    score2 = 0;
+                    document.getElementById('score2').innerText = score2;
+                }
+                generateNewTarget();
+            } else {
+                playSound('error');
+            }
+        });
+
+        function resetGame2() { score2 = 0; document.getElementById('score2').innerText = score2; generateNewTarget(); }
+
+        window.onload = function() { initGame1(); generateNewTarget(); };
+    </script>
+</body>
+</html>
